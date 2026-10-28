@@ -6,7 +6,13 @@ CFLAGS   := -std=c17 -Wall -Wextra -Werror -Wvla
 DEPFLAGS := -MMD -MP
 CPPFLAGS := -Isrc/common
 
-BUILD := build
+SANFLAGS ?=
+CFLAGS   += $(SANFLAGS)
+LDFLAGS  += $(SANFLAGS)
+
+ASAN_FLAGS := -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer -g
+
+BUILD ?= build
 OBJ   := $(BUILD)/obj
 LIB   := $(BUILD)/lib
 BIN   := $(BUILD)/bin
@@ -32,7 +38,7 @@ TEST_OBJS := $(patsubst tests/%.c,$(OBJ)/tests/%.o,$(TEST_SRCS))
 
 .SECONDARY: $(TEST_OBJS)
 
-.PHONY: all sensor hub supervisor test clean
+.PHONY: all sensor hub supervisor test asan clean
 
 all: $(PROGS)
 
@@ -72,7 +78,11 @@ test: $(TEST_BINS)
 	done; \
 	exit $$fail
 
+asan:
+	rm -rf build-asan
+	$(MAKE) BUILD=build-asan SANFLAGS="$(ASAN_FLAGS)" all test
+
 clean:
-	rm -rf $(BUILD)
+	rm -rf $(BUILD) build-asan
 
 -include $(shell find $(OBJ) -name '*.d' 2>/dev/null)
