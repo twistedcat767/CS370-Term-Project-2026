@@ -26,7 +26,13 @@ SUPERVISOR_OBJS := $(call objs,$(SUPERVISOR_SRCS))
 LIBCOMMON := $(LIB)/libcommon.a
 PROGS     := $(BIN)/sensor $(BIN)/hub $(BIN)/supervisor
 
-.PHONY: all sensor hub supervisor clean
+TEST_SRCS := $(wildcard tests/*.c)
+TEST_BINS := $(patsubst tests/%.c,$(BIN)/tests/%,$(TEST_SRCS))
+TEST_OBJS := $(patsubst tests/%.c,$(OBJ)/tests/%.o,$(TEST_SRCS))
+
+.SECONDARY: $(TEST_OBJS)
+
+.PHONY: all sensor hub supervisor test clean
 
 all: $(PROGS)
 
@@ -49,6 +55,22 @@ $(BIN)/supervisor: $(SUPERVISOR_OBJS) $(LIBCOMMON)
 $(PROGS):
 	@mkdir -p $(@D)
 	$(CC) $(LDFLAGS) -o $@ $(filter %.o,$^) -L$(LIB) -lcommon $(LDLIBS)
+
+$(OBJ)/tests/%.o: tests/%.c
+	@mkdir -p $(@D)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(DEPFLAGS) -c $< -o $@
+
+$(BIN)/tests/%: $(OBJ)/tests/%.o $(LIBCOMMON)
+	@mkdir -p $(@D)
+	$(CC) $(LDFLAGS) -o $@ $< -L$(LIB) -lcommon $(LDLIBS)
+
+test: $(TEST_BINS)
+	@fail=0; \
+	for t in $(TEST_BINS); do \
+		if ./$$t; then echo "PASS $$t"; \
+		else echo "FAIL $$t"; fail=1; fi; \
+	done; \
+	exit $$fail
 
 clean:
 	rm -rf $(BUILD)
