@@ -12,6 +12,8 @@ LDFLAGS  += $(SANFLAGS)
 
 ASAN_FLAGS := -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer -g
 
+VALGRIND := valgrind --leak-check=full --track-fds=yes --trace-children=yes --error-exitcode=1
+
 BUILD ?= build
 OBJ   := $(BUILD)/obj
 LIB   := $(BUILD)/lib
@@ -38,7 +40,7 @@ TEST_OBJS := $(patsubst tests/%.c,$(OBJ)/tests/%.o,$(TEST_SRCS))
 
 .SECONDARY: $(TEST_OBJS)
 
-.PHONY: all sensor hub supervisor test asan clean
+.PHONY: all sensor hub supervisor test asan memcheck clean
 
 all: $(PROGS)
 
@@ -81,6 +83,14 @@ test: $(TEST_BINS)
 asan:
 	rm -rf build-asan
 	$(MAKE) BUILD=build-asan SANFLAGS="$(ASAN_FLAGS)" all test
+
+memcheck: $(TEST_BINS)
+	@fail=0; \
+	for t in $(TEST_BINS); do \
+		if $(VALGRIND) ./$$t; then echo "PASS $$t"; \
+		else echo "FAIL $$t"; fail=1; fi; \
+	done; \
+	exit $$fail
 
 clean:
 	rm -rf $(BUILD) build-asan
