@@ -14,9 +14,9 @@ fds across restart, heartbeat within 60s of start.
 logged. The 48-hour soak is the test suite of last resort.
 - NEVER weaken, skip, or delete a test to make the suite pass.
 ## Ownership
-- alice/: capture pipeline, kernel-facing code (src/capture, src/drv)
-- bob/: storage layer, analysis engine (src/store, src/analysis)
-- Shared: supervisor, interface. The agent edits outside the current
+- alice/: sensors and supervisor (src/sensors/, src/supervisor/)
+- bob/: pipeline and storage (src/common/, src/hub/, src/store/)
+- Shared: tools, tests, docs (tools/, tests/, docs/). The agent edits outside the current
 session owner’s area only when told explicitly whose session this is.
 ## Style
 - Systems core: C17, -Wall -Wextra -Werror, no VLAs.
